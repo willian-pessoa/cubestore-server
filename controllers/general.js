@@ -1,3 +1,5 @@
+import jwt from "jsonwebtoken"
+
 import User from "../models/User.js";
 import OverallStat from "../models/OverallStat.js";
 import Transaction from "../models/Transaction.js";
@@ -62,11 +64,17 @@ export const postLoginUser = async (req, res) => {
   try {
     let email = req.body.email;
     let password = req.body.password;
-
+    let token = null
     const user = await User.findOne({ email });
 
     if (user && user.password === password) {
-      res.status(200).json({ email, message: "login with success" });
+      const id = user._id
+      if (user.role === "superadmin" || user.role === "admin") {
+        token = jwt.sign({ id }, process.env.SECRET, {
+          expiresIn: 60 * 60 * 24
+        });
+      }
+      res.status(200).json({ token: token, message: "login with success", user: { ...user._doc } });
     } else {
       res.status(404).json({ email, message: "user don't find" });
     }
@@ -83,7 +91,7 @@ export const postRegisterUser = async (req, res) => {
     if (user) return res.status(404).json({ email: userData.email, message: "user already exist" });
 
     const createUser = await User.create({ ...userData })
-    res.status(200).json({ ...createUser._doc, message: "register with success" });
+    res.status(200).json({ user: { ...createUser._doc }, message: "register with success" });
 
   } catch (error) {
     res.status(404).json({ message: error.message });
