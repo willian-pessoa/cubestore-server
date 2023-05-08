@@ -57,3 +57,35 @@ export const getDashboardStats = async (req, res) => {
     res.status(404).json({ message: error.message });
   }
 };
+
+export const postLoginUser = async (req, res) => {
+  try {
+    let email = req.body.email;
+    let password = req.body.password;
+
+    const user = await User.findOne({ email });
+
+    if (user && user.password === password) {
+      res.status(200).json({ email, message: "login with success" });
+    } else {
+      res.status(404).json({ email, message: "user don't find" });
+    }
+  } catch (error) {
+    res.status(404).json({ message: error.message });
+  }
+};
+
+export const postRegisterUser = async (req, res) => {
+  try {
+    let userData = { ...req.body }
+
+    const user = await User.findOne({ email: userData.email });
+    if (user) return res.status(404).json({ email: userData.email, message: "user already exist" });
+
+    const createUser = await User.create({ ...userData })
+    res.status(200).json({ ...createUser._doc, message: "register with success" });
+
+  } catch (error) {
+    res.status(404).json({ message: error.message });
+  }
+}
